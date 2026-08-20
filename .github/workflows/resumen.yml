@@ -1,0 +1,44 @@
+name: Resumen Económico
+
+on:
+  schedule:
+    # OJO: los cron de GitHub Actions siempre están en UTC.
+    # Chile está en UTC-4 (invierno) y UTC-3 (verano, desde el primer
+    # domingo de septiembre hasta el primer domingo de abril).
+    #
+    # Valores actuales = horario de INVIERNO (UTC-4):
+    - cron: '0 12 * * 2'   # martes 08:00 Chile
+    - cron: '0 1 * * 3'    # martes 21:00 Chile (= miércoles 01:00 UTC)
+    #
+    # En VERANO (UTC-3) cambiar a:
+    # - cron: '0 11 * * 2'  # martes 08:00 Chile
+    # - cron: '0 0 * * 3'   # martes 21:00 Chile (= miércoles 00:00 UTC)
+
+  workflow_dispatch:       # permite ejecutarlo a mano desde la pestaña Actions
+
+jobs:
+  enviar-resumen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar el resumen
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_IDS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          TZ: America/Santiago
+        run: python resumen_diarios.py
